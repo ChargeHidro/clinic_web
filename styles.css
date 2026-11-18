@@ -1,0 +1,110 @@
+/* Theme colours are set per clinic from config.js (see applyTheme in app.js) */
+:root {
+  --primary: #2f5d46;
+  --primary-dark: #22432f;
+  --bg: #f8f6f0;
+  --soft: #e7ebe2;
+  --beige: #efe7dc;
+  --ink: #1d3328;
+  --muted: #5f6b63;
+  --line: #dcdfd6;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--ink); }
+
+.font-serif { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+.label { font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* ---------- Colours ---------- */
+.bg-page { background: var(--bg); }
+.bg-soft { background: var(--soft); }
+.bg-beige { background: var(--beige); }
+.bg-primary { background: var(--primary); }
+.bg-primary-dark { background: var(--primary-dark); }
+.text-primary { color: var(--primary); }
+.text-ink { color: var(--ink); }
+.text-muted { color: var(--muted); }
+.border-line { border-color: var(--line); }
+.divide-line > * + * { border-color: var(--line); }
+.bg-line { background: var(--line); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 14px 13px 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 10px 30px -14px var(--primary); }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-white { background: #fff; color: var(--ink); }
+.btn-outline { border: 1px solid var(--line); color: var(--ink); background: #fff; }
+.btn-outline:hover { border-color: var(--primary); }
+.btn-sm { padding: 10px 12px 10px 18px; font-size: 13px; }
+.btn .btn-ico {
+  width: 26px; height: 26px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, 0.16);
+}
+.btn-white .btn-ico, .btn-outline .btn-ico { background: var(--soft); color: var(--primary); }
+
+.link-arrow { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--ink); }
+.link-arrow svg { transition: transform 0.2s ease; }
+.link-arrow:hover svg { transform: translateX(3px); }
+
+/* ---------- Cards & images ---------- */
+.shadow-soft { box-shadow: 0 20px 50px -25px rgba(20, 30, 25, 0.35); }
+.lift { transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; }
+.lift:hover { transform: translateY(-4px); box-shadow: 0 24px 50px -30px rgba(20, 30, 25, 0.45); border-color: var(--primary); }
+.img-cover { width: 100%; height: 100%; object-fit: cover; display: block; }
+.zoom { overflow: hidden; }
+.zoom img { transition: transform 0.7s ease; }
+.group:hover .zoom img { transform: scale(1.04); }
+
+/* Big curve on the hero photo, like an arch */
+.hero-img { border-radius: 24px 120px 24px 24px; }
+@media (max-width: 640px) { .hero-img { border-radius: 20px 72px 20px 20px; } }
+
+/* ---------- FAQ accordion ---------- */
+.faq summary { list-style: none; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq[open] { background: var(--soft); border-color: transparent; }
+.faq .faq-icon { position: relative; width: 14px; height: 14px; flex-shrink: 0; }
+.faq .faq-icon::before, .faq .faq-icon::after {
+  content: ""; position: absolute; left: 0; top: 6px; width: 14px; height: 1.6px; background: var(--ink); transition: transform 0.25s ease;
+}
+.faq .faq-icon::after { transform: rotate(90deg); }
+.faq[open] .faq-icon::after { transform: rotate(0deg); }
+
+/* ---------- Form ---------- */
+.field {
+  width: 100%;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 0.8rem 1rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.field:focus { border-color: var(--primary); background: #fff; }
+.field::placeholder { color: #8b938d; }
+
+#nav { background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+
+/* ---------- Scroll reveal ---------- */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease, transform 0.8s ease; }
+.reveal.in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .zoom img, .btn, .lift { transition: none; }
+}

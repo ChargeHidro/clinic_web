@@ -38,28 +38,37 @@
     bone: '<path d="M17 10c.7-.7 1.69 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .81.7 1.8 0 2.5l-7 7c-.7.7-1.69 0-2.5 0a2.5 2.5 0 0 0 0 5c.28 0 .5.22.5.5a2.5 2.5 0 1 0 5 0c0-.81-.7-1.8 0-2.5Z"/>',
     spine: '<path d="M12 2v20"/><rect x="8" y="4" width="8" height="4" rx="1.5"/><rect x="8" y="10" width="8" height="4" rx="1.5"/><rect x="8" y="16" width="8" height="4" rx="1.5"/>',
     pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+    tooth: '<path d="M7 3c-2 0-3.5 1.6-3.5 4 0 2 .8 3.4 1.4 5 .6 1.7.6 4 1.1 6.2.3 1.3.8 2.8 1.8 2.8 1.5 0 1.6-3 2.2-5 .3-1 .9-1.5 2-1.5s1.7.5 2 1.5c.6 2 .7 5 2.2 5 1 0 1.5-1.5 1.8-2.8.5-2.2.5-4.5 1.1-6.2.6-1.6 1.4-3 1.4-5 0-2.4-1.5-4-3.5-4-2 0-3 1-5 1S9 3 7 3z"/>',
+    sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17v4M17 19h4"/>',
+    home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
     phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
   };
   const icon = (name, cls = "w-4 h-4", sw = 1.8) =>
     `<svg class="${cls} shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ""}</svg>`;
   const btnIco = (name = "arrowRight") => `<span class="btn-ico">${icon(name, "w-3.5 h-3.5", 2)}</span>`;
 
-  // Without a valid ?clinic=..., show a neutral page (or the full list with ?all=1)
-  if (!slug || !clinics[slug]) {
+  // Which clinic? A saved one (?clinic=key) or any clinic described in the link (?n=Name&...)
+  const presets = window.CLINIC_PRESETS || {};
+  const entry = slug && clinics[slug] ? clinics[slug] : fromParams(params);
+
+  // Neither: show a neutral page (or the saved list with ?all=1)
+  if (!entry) {
     applyTheme(window.CLINIC_DEFAULTS.theme);
     if (params.has("all")) renderIndex();
     else renderPrivate();
     return;
   }
 
-  const c = merge(window.CLINIC_DEFAULTS, clinics[slug]);
+  const c = merge(merge(window.CLINIC_DEFAULTS, presets[entry.preset] || presets.general || {}), entry);
   applyTheme(c.theme);
-  const fullName = `${c.name} ${c.tagline}`;
+  const fullName = [c.name, c.tagline].filter(Boolean).join(" ");
   document.title = fullName;
 
-  const wa = (text) => `https://wa.me/${c.phone}?text=${encodeURIComponent(text)}`;
-  const tel = `tel:+${c.phone}`;
-  const phonePretty = `+${c.phone.slice(0, 2)} ${c.phone.slice(2, 7)} ${c.phone.slice(7)}`;
+  const phone = String(c.phone || "").replace(/\D/g, "");
+  // Without a phone number, WhatsApp opens its contact picker instead
+  const wa = (text) => `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  const tel = phone ? `tel:+${phone}` : "#visit";
+  const phonePretty = phone ? `+${phone.slice(0, 2)} ${phone.slice(2, 7)} ${phone.slice(7)}` : "Call us";
   const mapQuery = encodeURIComponent(c.address || `${fullName}, ${c.area}`);
   const mapsLink = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
   const wrap = "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8";
@@ -443,6 +452,30 @@
 
   // ---------- Functions ----------
 
+  // Build a clinic from link parameters: ?n=Name&a=Area&p=Phone&t=theme&tg=
+  function fromParams(p) {
+    const name = (p.get("n") || "").trim().slice(0, 60);
+    if (!name) return null;
+    const digits = (p.get("p") || "").replace(/\D/g, "");
+    const phoneNo = digits.length === 10 ? "91" + digits : digits.length === 12 && digits.startsWith("91") ? digits : "";
+    const preset = p.get("t") || "general";
+    const e = {
+      name,
+      tagline: p.has("tg")
+        ? p.get("tg").trim().slice(0, 40)
+        : /clinic|hospital|health|care|dental|physio|centre|center|nursing/i.test(name)
+          ? ""
+          : preset === "hospital"
+            ? "Hospital"
+            : "Clinic",
+      phone: phoneNo,
+      preset,
+    };
+    const area = (p.get("a") || "").trim().slice(0, 60);
+    if (area) e.area = area;
+    return e;
+  }
+
   function applyTheme(t) {
     const p = t.primary || "#2f5d46";
     const bg = t.bg || "#f8f6f0";
@@ -509,7 +542,8 @@
         <div class="mt-8 space-y-3">
           ${Object.entries(clinics)
             .map(([key, v]) => {
-              const color = esc((v.theme && v.theme.primary) || "#2f5d46");
+              const theme = v.theme || ((window.CLINIC_PRESETS || {})[v.preset] || {}).theme || {};
+              const color = esc(theme.primary || "#2f5d46");
               return `
             <a href="?clinic=${encodeURIComponent(key)}" class="flex items-center justify-between gap-4 p-5 rounded-xl border border-line bg-white hover:border-[#999] transition">
               <div class="min-w-0">
